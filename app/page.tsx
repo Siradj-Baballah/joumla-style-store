@@ -1,191 +1,66 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Plus, Edit, Trash2, Save, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import type { Product, CreateProductData } from "@/lib/supabase"
+import Header from "@/components/header"
+import ProductGrid from "@/components/product-grid"
 
-export default function AdminPage() {
-  const [products, setProducts] = useState<Product[]>([])
-  const [loading, setLoading] = useState(true)
-  const [isAddingProduct, setIsAddingProduct] = useState(false)
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
-
-  useEffect(() => {
-    fetchProducts()
-  }, [])
-
-  const fetchProducts = async () => {
-    try {
-      setLoading(true)
-      const response = await fetch("/api/products")
-      if (!response.ok) {
-        throw new Error("Failed to fetch products")
-      }
-      const data = await response.json()
-      setProducts(data)
-    } catch (error) {
-      console.error("Error fetching products:", error)
-      alert("فشل في تحميل المنتجات")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleAddProduct = async (productData: CreateProductData) => {
-    try {
-      const response = await fetch("/api/products", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(productData),
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to create product")
-      }
-
-      await fetchProducts()
-      setIsAddingProduct(false)
-      alert("تم إضافة المنتج بنجاح!")
-    } catch (error) {
-      console.error("Error creating product:", error)
-      alert("فشل في إضافة المنتج")
-    }
-  }
-
-  const handleUpdateProduct = async (productData: CreateProductData) => {
-    if (!editingProduct) return
-
-    try {
-      const response = await fetch(`/api/products/${editingProduct.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(productData),
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to update product")
-      }
-
-      await fetchProducts()
-      setEditingProduct(null)
-      alert("تم تحديث المنتج بنجاح!")
-    } catch (error) {
-      console.error("Error updating product:", error)
-      alert("فشل في تحديث المنتج")
-    }
-  }
-
-  const handleDeleteProduct = async (id: number) => {
-    if (!confirm("هل أنت متأكد من حذف هذا المنتج؟")) return
-
-    try {
-      const response = await fetch(`/api/products/${id}`, {
-        method: "DELETE",
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to delete product")
-      }
-
-      await fetchProducts()
-      alert("تم حذف المنتج بنجاح!")
-    } catch (error) {
-      console.error("Error deleting product:", error)
-      alert("فشل في حذف المنتج")
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#335E6D] mx-auto"></div>
-          <p className="text-slate-600 mt-4">جاري تحميل المنتجات...</p>
-        </div>
-      </div>
-    )
-  }
-
+export default function HomePage() {
   return (
     <div className="min-h-screen bg-stone-50">
-      <header className="bg-[#335E6D] shadow-lg border-b border-[#2A4F5C]">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-[#2A4F5C] rounded-lg flex items-center justify-center">
-                <span className="text-2xl font-bold text-stone-100" style={{ fontFamily: "serif" }}>
-                  J
-                </span>
+      <Header />
+
+      <main className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-[#335E6D] text-center mb-2">Joumla Style</h1>
+          <p className="text-slate-600 text-center">أحدث الأزياء والملابس العصرية</p>
+        </div>
+
+        <div className="mb-8">
+          <div className="relative overflow-hidden rounded-xl">
+            <div className="bg-[#335E6D]/10 p-8 md:p-12">
+              <div className="text-center md:w-2/3 mx-auto">
+                <h2 className="text-2xl md:text-3xl font-bold text-[#335E6D] mb-4">تشكيلة جديدة</h2>
+                <p className="text-slate-700 mb-6">اكتشف أحدث تشكيلاتنا من الملابس العصرية بأسعار مناسبة وجودة عالية</p>
               </div>
-              <div className="text-xl font-bold text-stone-100">Joumla Style - لوحة الإدارة</div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Button
-                onClick={() => window.open("https://joumla-style.vercel.app", "_blank")}
-                variant="outline"
-                className="text-stone-100 border-stone-300 hover:bg-stone-100 hover:text-[#335E6D]"
-              >
-                زيارة المتجر
-              </Button>
             </div>
           </div>
         </div>
-      </header>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-[#335E6D]">إدارة المنتجات ({products.length})</h1>
-          <Dialog open={isAddingProduct} onOpenChange={setIsAddingProduct}>
-            <DialogTrigger asChild>
-              <Button className="bg-[#335E6D] hover:bg-[#2A4F5C] text-stone-100 flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                إضافة منتج جديد
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>إضافة منتج جديد</DialogTitle>
-              </DialogHeader>
-              <ProductForm onSave={handleAddProduct} onCancel={() => setIsAddingProduct(false)} />
-            </DialogContent>
-          </Dialog>
+        <ProductGrid />
+      </main>
+
+      <footer className="bg-[#335E6D] text-white py-8 mt-12">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="mb-6 md:mb-0">
+              <div className="flex items-center gap-3 justify-center md:justify-start">
+                <div className="w-10 h-10 bg-[#2A4F5C] rounded-lg flex items-center justify-center">
+                  <span className="text-xl font-bold text-stone-100" style={{ fontFamily: "serif" }}>
+                    J
+                  </span>
+                </div>
+                <div className="text-lg font-bold text-stone-100">Joumla Style</div>
+              </div>
+              <p className="text-stone-300 mt-2 text-center md:text-right">أزياء عصرية بلمسة فريدة</p>
+            </div>
+
+            <div className="text-center md:text-right">
+              <h3 className="font-bold mb-2">تواصل معنا</h3>
+              <p className="text-stone-300">واتساب: 966559939985+</p>
+            </div>
+          </div>
+
+          <div className="border-t border-[#2A4F5C] mt-6 pt-6 text-center">
+            <p className="text-stone-300 text-sm">&copy; {new Date().getFullYear()} Joumla Style. جميع الحقوق محفوظة</p>
+          </div>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {products.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onEdit={(product) => setEditingProduct(product)}
-              onDelete={handleDeleteProduct}
-            />
-          ))}
-        </div>
-
-        {editingProduct && (
-          <Dialog open={!!editingProduct} onOpenChange={() => setEditingProduct(null)}>
-            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>تعديل المنتج</DialogTitle>
-              </DialogHeader>
-              <ProductForm
-                product={editingProduct}
-                onSave={handleUpdateProduct}
-                onCancel={() => setEditingProduct(null)}
-              />
-            </DialogContent>
-          </Dialog>
-        )}
-      </div>
+      </footer>
     </div>
   )
 }
