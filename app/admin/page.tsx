@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import type { Product, CreateProductData } from "@/lib/supabase"
+import type { Product, CreateProductData } from "@/lib/mock-data"
+import AdminGuard from "@/components/admin-guard"
 
 export default function AdminPage() {
   const [products, setProducts] = useState<Product[]>([])
@@ -116,75 +117,90 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50">
-      <header className="bg-[#335E6D] shadow-lg border-b border-[#2A4F5C]">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-[#2A4F5C] rounded-lg flex items-center justify-center">
-                <span className="text-2xl font-bold text-stone-100" style={{ fontFamily: "serif" }}>
-                  J
-                </span>
+    <AdminGuard>
+      <div className="min-h-screen bg-stone-50">
+        <header className="bg-[#335E6D] shadow-lg border-b border-[#2A4F5C]">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-[#2A4F5C] rounded-lg flex items-center justify-center">
+                  <span className="text-2xl font-bold text-stone-100" style={{ fontFamily: "serif" }}>
+                    J
+                  </span>
+                </div>
+                <div className="text-xl font-bold text-stone-100">Joumla Style - لوحة الإدارة</div>
               </div>
-              <div className="text-xl font-bold text-stone-100">Joumla Style - لوحة الإدارة</div>
+              <div className="flex items-center gap-3">
+                <Button
+                  onClick={() => {
+                    localStorage.removeItem("adminLoggedIn")
+                    localStorage.removeItem("adminLoginTime")
+                    window.location.href = "/admin/login"
+                  }}
+                  variant="outline"
+                  className="text-stone-100 border-stone-300 hover:bg-stone-100 hover:text-[#335E6D]"
+                >
+                  تسجيل الخروج
+                </Button>
+                <Button
+                  onClick={() => window.open("https://joumla-style.vercel.app", "_blank")}
+                  variant="outline"
+                  className="text-stone-100 border-stone-300 hover:bg-stone-100 hover:text-[#335E6D]"
+                >
+                  زيارة المتجر
+                </Button>
+              </div>
             </div>
-            <Button
-              onClick={() => (window.location.href = "/")}
-              variant="outline"
-              className="text-stone-100 border-stone-300 hover:bg-stone-100 hover:text-[#335E6D]"
-            >
-              العودة للمتجر
-            </Button>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-[#335E6D]">إدارة المنتجات ({products.length})</h1>
-          <Dialog open={isAddingProduct} onOpenChange={setIsAddingProduct}>
-            <DialogTrigger asChild>
-              <Button className="bg-[#335E6D] hover:bg-[#2A4F5C] text-stone-100 flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                إضافة منتج جديد
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>إضافة منتج جديد</DialogTitle>
-              </DialogHeader>
-              <ProductForm onSave={handleAddProduct} onCancel={() => setIsAddingProduct(false)} />
-            </DialogContent>
-          </Dialog>
-        </div>
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-2xl font-bold text-[#335E6D]">إدارة المنتجات ({products.length})</h1>
+            <Dialog open={isAddingProduct} onOpenChange={setIsAddingProduct}>
+              <DialogTrigger asChild>
+                <Button className="bg-[#335E6D] hover:bg-[#2A4F5C] text-stone-100 flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  إضافة منتج جديد
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>إضافة منتج جديد</DialogTitle>
+                </DialogHeader>
+                <ProductForm onSave={handleAddProduct} onCancel={() => setIsAddingProduct(false)} />
+              </DialogContent>
+            </Dialog>
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {products.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onEdit={(product) => setEditingProduct(product)}
-              onDelete={handleDeleteProduct}
-            />
-          ))}
-        </div>
-
-        {editingProduct && (
-          <Dialog open={!!editingProduct} onOpenChange={() => setEditingProduct(null)}>
-            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>تعديل المنتج</DialogTitle>
-              </DialogHeader>
-              <ProductForm
-                product={editingProduct}
-                onSave={handleUpdateProduct}
-                onCancel={() => setEditingProduct(null)}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {products.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onEdit={(product) => setEditingProduct(product)}
+                onDelete={handleDeleteProduct}
               />
-            </DialogContent>
-          </Dialog>
-        )}
+            ))}
+          </div>
+
+          {editingProduct && (
+            <Dialog open={!!editingProduct} onOpenChange={() => setEditingProduct(null)}>
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>تعديل المنتج</DialogTitle>
+                </DialogHeader>
+                <ProductForm
+                  product={editingProduct}
+                  onSave={handleUpdateProduct}
+                  onCancel={() => setEditingProduct(null)}
+                />
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
       </div>
-    </div>
+    </AdminGuard>
   )
 }
 

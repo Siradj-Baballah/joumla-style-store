@@ -4,7 +4,7 @@ import { useState } from "react"
 import Image from "next/image"
 import { MessageCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import type { Product } from "@/lib/supabase"
+import type { Product } from "@/lib/mock-data"
 
 interface ProductCardProps {
   product: Product

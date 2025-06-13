@@ -25,7 +25,7 @@ export default function AdminLogin() {
 
     // بيانات الدخول الثابتة (يمكنك تغييرها)
     const ADMIN_USERNAME = "admin"
-    const ADMIN_PASSWORD = "miro25siradj"
+    const ADMIN_PASSWORD = "joumla2024"
 
     // محاكاة تأخير الشبكة
     await new Promise((resolve) => setTimeout(resolve, 1000))

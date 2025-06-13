@@ -1,7 +1,8 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { supabaseServer } from "@/lib/supabase-server"
+import { NextResponse } from "next/server"
+import { productStore } from "@/lib/mock-data"
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+// تحديث منتج محدد
+export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
     const body = await request.json()
     const { name, price, colors } = body
@@ -11,67 +12,46 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    // تحديث المنتج
-    const { error: productError } = await supabaseServer
-      .from("products")
-      .update({
-        name: name.trim(),
-        price: Number.parseFloat(price),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", productId)
+    console.log(`📝 Updating product ${productId}:`, { name, price, colorsCount: colors.length })
 
-    if (productError) {
-      console.error("Error updating product:", productError)
-      return NextResponse.json({ error: "Failed to update product" }, { status: 500 })
+    // محاكاة التأخير في الاستجابة مثل قاعدة البيانات
+    await new Promise((resolve) => setTimeout(resolve, 300))
+
+    // تحديث المنتج في المستودع المحلي
+    const updatedProduct = productStore.update(productId, { name, price, colors })
+
+    if (!updatedProduct) {
+      return NextResponse.json({ error: "Product not found" }, { status: 404 })
     }
 
-    // حذف الألوان القديمة
-    const { error: deleteError } = await supabaseServer.from("product_colors").delete().eq("product_id", productId)
-
-    if (deleteError) {
-      console.error("Error deleting old colors:", deleteError)
-    }
-
-    // إدراج الألوان الجديدة
-    if (colors && colors.length > 0) {
-      const colorsData = colors.map((color: any) => ({
-        product_id: productId,
-        name: color.name.trim(),
-        value: color.value,
-        image_url: color.image_url || color.image || null,
-      }))
-
-      const { error: colorsError } = await supabaseServer.from("product_colors").insert(colorsData)
-
-      if (colorsError) {
-        console.error("Error updating colors:", colorsError)
-        return NextResponse.json({ error: "Failed to update product colors" }, { status: 500 })
-      }
-    }
-
-    return NextResponse.json({ success: true })
+    console.log("✅ Product updated successfully")
+    return NextResponse.json({ success: true, product: updatedProduct })
   } catch (error) {
-    console.error("Error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error("❌ Error updating product:", error)
+    return NextResponse.json({ error: "Error updating product" }, { status: 500 })
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+// حذف منتج محدد
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   try {
     const productId = Number.parseInt(params.id)
+    console.log(`🗑️ Deleting product ${productId}`)
 
-    // حذف المنتج (سيتم حذف الألوان تلقائياً بسبب CASCADE)
-    const { error } = await supabaseServer.from("products").delete().eq("id", productId)
+    // محاكاة التأخير في الاستجابة مثل قاعدة البيانات
+    await new Promise((resolve) => setTimeout(resolve, 300))
 
-    if (error) {
-      console.error("Error deleting product:", error)
-      return NextResponse.json({ error: "Failed to delete product" }, { status: 500 })
+    // حذف المنتج من المستودع المحلي
+    const wasDeleted = productStore.delete(productId)
+
+    if (!wasDeleted) {
+      return NextResponse.json({ error: "Product not found" }, { status: 404 })
     }
 
+    console.log("✅ Product deleted successfully")
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("Error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error("❌ Error deleting product:", error)
+    return NextResponse.json({ error: "Error deleting product" }, { status: 500 })
   }
 }

@@ -1,97 +1,48 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { supabaseServer } from "@/lib/supabase-server"
+import { NextResponse } from "next/server"
+import { productStore } from "@/lib/mock-data"
 
+// جلب جميع المنتجات
 export async function GET() {
   try {
-    // جلب المنتجات أولاً
-    const { data: products, error: productsError } = await supabaseServer
-      .from("products")
-      .select("*")
-      .order("created_at", { ascending: false })
+    console.log("🔄 Fetching products (local mode)...")
 
-    if (productsError) {
-      console.error("Error fetching products:", productsError)
-      return NextResponse.json({ error: "Failed to fetch products" }, { status: 500 })
-    }
+    // محاكاة التأخير في الاستجابة مثل قاعدة البيانات
+    await new Promise((resolve) => setTimeout(resolve, 300))
 
-    if (!products || products.length === 0) {
-      return NextResponse.json([])
-    }
+    // جلب المنتجات من المستودع المحلي
+    const products = productStore.getAll()
 
-    // جلب الألوان لكل منتج
-    const productsWithColors = await Promise.all(
-      products.map(async (product) => {
-        const { data: colors, error: colorsError } = await supabaseServer
-          .from("product_colors")
-          .select("*")
-          .eq("product_id", product.id)
-          .order("id", { ascending: true })
-
-        if (colorsError) {
-          console.error("Error fetching colors for product", product.id, colorsError)
-          return { ...product, colors: [] }
-        }
-
-        return { ...product, colors: colors || [] }
-      }),
-    )
-
-    return NextResponse.json(productsWithColors)
+    console.log(`✅ Successfully fetched ${products.length} products`)
+    return NextResponse.json(products)
   } catch (error) {
-    console.error("Error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error("❌ Error fetching products:", error)
+    return NextResponse.json({ error: "Error fetching products" }, { status: 500 })
   }
 }
 
-export async function POST(request: NextRequest) {
+// إنشاء منتج جديد
+export async function POST(request: Request) {
   try {
     const body = await request.json()
     const { name, price, colors } = body
 
+    // التحقق من البيانات
     if (!name || !price || !colors || colors.length === 0) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    // إدراج المنتج
-    const { data: product, error: productError } = await supabaseServer
-      .from("products")
-      .insert([
-        {
-          name: name.trim(),
-          price: Number.parseFloat(price),
-          updated_at: new Date().toISOString(),
-        },
-      ])
-      .select()
-      .single()
+    console.log("📝 Creating new product:", { name, price, colorsCount: colors.length })
 
-    if (productError) {
-      console.error("Error creating product:", productError)
-      return NextResponse.json({ error: "Failed to create product" }, { status: 500 })
-    }
+    // محاكاة التأخير في الاستجابة مثل قاعدة البيانات
+    await new Promise((resolve) => setTimeout(resolve, 300))
 
-    // إدراج الألوان
-    if (colors && colors.length > 0) {
-      const colorsData = colors.map((color: any) => ({
-        product_id: product.id,
-        name: color.name.trim(),
-        value: color.value,
-        image_url: color.image_url || color.image || null,
-      }))
+    // إنشاء منتج جديد في المستودع المحلي
+    const newProduct = productStore.add({ name, price, colors })
 
-      const { error: colorsError } = await supabaseServer.from("product_colors").insert(colorsData)
-
-      if (colorsError) {
-        console.error("Error creating colors:", colorsError)
-        // حذف المنتج إذا فشل إدراج الألوان
-        await supabaseServer.from("products").delete().eq("id", product.id)
-        return NextResponse.json({ error: "Failed to create product colors" }, { status: 500 })
-      }
-    }
-
-    return NextResponse.json({ success: true, product })
+    console.log("✅ Product created successfully:", newProduct.id)
+    return NextResponse.json({ success: true, product: newProduct })
   } catch (error) {
-    console.error("Error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error("❌ Error creating product:", error)
+    return NextResponse.json({ error: "Error creating product" }, { status: 500 })
   }
 }
